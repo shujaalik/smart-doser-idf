@@ -6,6 +6,8 @@ Doser doser = {
         .in2 = DRIVER_IN2,
         .in3 = DRIVER_IN3,
         .in4 = DRIVER_IN4,
+        .full_closed_switch = FULL_CLOSED_SWITCH,
+        .full_open_switch = FULL_OPEN_SWITCH,
         .number_of_steps = DRIVER_STEPS_PER_REV,
         .step_number = 0,
         .steps_left = 0,
@@ -58,12 +60,16 @@ void initialize_all(void)
 {
     doser_init(&doser, DRIVER_STEPS_PER_REV, DRIVER_DEFAULT_SPEED, doser.calibration_factor);
     lcd_init();
+    time_manager_init();
     io_module_init();
+    init_wifi_module();
 }
 
 void start_modules(void)
 {
     start_bt_module();
+    struct tm current_time = get_time();
+    ESP_LOGI("START_MODULES", "Current time: %02d:%02d:%02d", current_time.tm_hour, current_time.tm_min, current_time.tm_sec);
 }
 
 void app_main(void)

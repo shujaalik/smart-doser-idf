@@ -15,5 +15,7 @@ void doser_init(Doser *doser, int steps_per_rev, float max_rpm, float calibratio
 void doser_dispense(Doser *doser, float quantity_ml, float speed_rpm);
 void doser_stop(Doser *doser);
 void doser_run_program(Doser *doser, float vtbi, float flow_rate);
+void full_open(Doser *doser);
+void full_close(Doser *doser);
 
 #endif

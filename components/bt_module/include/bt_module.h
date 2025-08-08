@@ -3,6 +3,7 @@
 #define _BT_MODULE_H_
 
 #include "main.h"
+#include "nvs_flash.h"
 #include "esp_nimble_hci.h"
 #include "esp_timer.h"
 #include "nimble/nimble_port.h"

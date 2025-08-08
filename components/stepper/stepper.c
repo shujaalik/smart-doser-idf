@@ -33,7 +33,7 @@ void stepper_step_motor(StepperMotor *motor, int step)
     ESP_LOGI(TAG, "Stepper motor step %d: IN1=%d, IN2=%d, IN3=%d, IN4=%d", step, step_patterns[step][0], step_patterns[step][1], step_patterns[step][2], step_patterns[step][3]);
 }
 
-void stepper_init(StepperMotor *motor, gpio_num_t in1, gpio_num_t in2, gpio_num_t in3, gpio_num_t in4, int steps, float max_speed_rpm)
+void stepper_init(StepperMotor *motor, gpio_num_t in1, gpio_num_t in2, gpio_num_t in3, gpio_num_t in4, gpio_num_t full_open_switch, gpio_num_t full_closed_switch, int steps, float max_speed_rpm)
 {
     motor->in1 = in1;
     motor->in2 = in2;
@@ -51,6 +51,8 @@ void stepper_init(StepperMotor *motor, gpio_num_t in1, gpio_num_t in2, gpio_num_
     gpio_set_direction(in2, GPIO_MODE_OUTPUT);
     gpio_set_direction(in3, GPIO_MODE_OUTPUT);
     gpio_set_direction(in4, GPIO_MODE_OUTPUT);
+    gpio_set_direction(full_open_switch, GPIO_MODE_INPUT);
+    gpio_set_direction(full_closed_switch, GPIO_MODE_INPUT);
 
     stepper_release(motor);
     ESP_LOGI(TAG, "Stepper motor initialized: IN1=%d, IN2=%d, IN3=%d, IN4=%d, Steps=%d, Max Speed RPM=%.2f", in1, in2, in3, in4, steps, max_speed_rpm);
@@ -78,6 +80,24 @@ void stepper_step(StepperMotor *motor, int steps_to_move, float speed_rpm)
         uint64_t now = esp_timer_get_time();
         if (now - motor->last_step_time >= motor->step_delay)
         {
+            if (direction)
+            {
+                if (gpio_get_level(motor->full_open_switch) == 1)
+                {
+                    ESP_LOGW(TAG, "Reached full open switch, stopping stepper");
+                    stepper_stop(motor);
+                    break;
+                }
+            }
+            else
+            {
+                if (gpio_get_level(motor->full_closed_switch) == 1)
+                {
+                    ESP_LOGW(TAG, "Reached full closed switch, stopping stepper");
+                    stepper_stop(motor);
+                    break;
+                }
+            }
             motor->last_step_time = now;
 
             if (direction)

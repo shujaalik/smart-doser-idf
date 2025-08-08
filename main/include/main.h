@@ -16,13 +16,16 @@
 #define BUTTON_02 GPIO_NUM_36
 #define BUTTON_03 GPIO_NUM_34
 
+#define FULL_OPEN_SWITCH GPIO_NUM_19
+#define FULL_CLOSED_SWITCH GPIO_NUM_18
+
 #define DRIVER_IN1 GPIO_NUM_25
 #define DRIVER_IN2 GPIO_NUM_26
 #define DRIVER_IN3 GPIO_NUM_27
 #define DRIVER_IN4 GPIO_NUM_33
 
 #define DRIVER_STEPS_PER_REV 200
-#define DRIVER_DEFAULT_SPEED 10
+#define DRIVER_DEFAULT_SPEED 100
 #define DRIVER_STEPS_PER_ML 90
 
 #define LCD_ADDR 0x27
@@ -78,6 +81,7 @@ typedef struct
 typedef struct
 {
     gpio_num_t in1, in2, in3, in4;
+    gpio_num_t full_open_switch, full_closed_switch;
     int number_of_steps;
     int step_number;
     int steps_left;
@@ -89,9 +93,11 @@ typedef struct
 void initialize_all(void);
 void act(char *cmd_json, void (*callback)(const char *));
 
+#include "time_manager.h"
 #include "lcd1604.h"
 #include "io_module.h"
 #include "bt_module.h"
+#include "wifi_module.h"
 #include "stepper.h"
 #include "doser.h"
 #include <cJSON.h>
