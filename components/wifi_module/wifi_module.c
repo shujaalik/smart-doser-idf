@@ -142,6 +142,10 @@ void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_base, in
         ESP_LOGI(TAG, "WIFIMASK:" IPSTR, IP2STR(&ip_info->netmask));
         ESP_LOGI(TAG, "WIFIGW:" IPSTR, IP2STR(&ip_info->gw));
     }
+    else
+    {
+        ESP_LOGI(TAG, "Unhandled WiFi event: %ld", event_id);
+    }
 }
 
 void wifi_start(void)
@@ -156,14 +160,39 @@ void wifi_start(void)
     wifi_configuration.sta.pmf_cfg.capable = true;
     wifi_configuration.sta.pmf_cfg.required = false;
     esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_configuration);
-    esp_wifi_start();
-    esp_wifi_set_mode(WIFI_MODE_STA);
-    esp_wifi_connect();
+    esp_err_t err = esp_wifi_start();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE("WIFI_MODULE", "Failed to start WiFi: %s", esp_err_to_name(err));
+        return;
+    }
+    err = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE("WIFI_MODULE", "Failed to set WiFi mode: %s", esp_err_to_name(err));
+        return;
+    }
+    err = esp_wifi_connect();
+    if (err != ESP_OK)
+    {
+        ESP_LOGE("WIFI_MODULE", "Failed to connect to WiFi: %s", esp_err_to_name(err));
+        return;
+    }
+}
+
+void start_wifi_module(void)
+{
+    wifi_start();
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    mqtt_app_start();
+    ESP_LOGI("WIFI_MODULE", "MQTT client started");
+    ESP_LOGI("WIFI_MODULE", "WiFi module initialized successfully");
 }
 
 void init_wifi_module(void)
 {
     const char *TAG = "WIFI_MODULE";
+    nvs_flash_init();
     set_topic();
     esp_netif_init();
     esp_event_loop_create_default();
@@ -171,9 +200,11 @@ void init_wifi_module(void)
     esp_netif_t *netif = esp_netif_create_default_wifi_sta();
     esp_netif_set_hostname(netif, DEVICE_NAME);
     wifi_init_config_t wifi_initiation = WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&wifi_initiation);
-    wifi_start();
-    vTaskDelay(pdMS_TO_TICKS(2000));
-    mqtt_app_start();
+    esp_err_t err = esp_wifi_init(&wifi_initiation);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to initialize WiFi: %s", esp_err_to_name(err));
+        return;
+    }
     ESP_LOGI(TAG, "WiFi module initialized successfully");
 }

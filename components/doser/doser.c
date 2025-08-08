@@ -7,6 +7,7 @@ void doser_init(Doser *doser, int steps_per_rev, float max_rpm, float calibratio
 
     // Set additional parameters for the doser
     doser->calibration_factor = calibration_factor; // steps per ml
+    doser_full_open(doser);                         // Move to full open position initially
 }
 
 void doser_dispense(Doser *doser, float quantity_ml, float speed_rpm)
@@ -21,7 +22,27 @@ void doser_run_program(Doser *doser, float vtbi, float flow_rate)
 {
     int steps_needed = (int)(vtbi * doser->calibration_factor);
     float speed_rpm = flow_rate / doser->calibration_factor * 60;
-    stepper_step(&doser->motor, steps_needed, speed_rpm);
+    // Create a FreeRTOS task to handle dispensing without blocking
+    void doser_dispense_task(void *param)
+    {
+        DoserDispenseTaskArgs *args = (DoserDispenseTaskArgs *)param;
+        stepper_step(&args->doser->motor, args->steps_needed, args->speed_rpm);
+        vPortFree(args);
+        vTaskDelete(NULL);
+    }
+
+    DoserDispenseTaskArgs *args = pvPortMalloc(sizeof(DoserDispenseTaskArgs));
+    if (args)
+    {
+        args->doser = doser;
+        args->steps_needed = steps_needed;
+        args->speed_rpm = speed_rpm;
+        xTaskCreate(doser_dispense_task, "doser_dispense_task", 2048, args, 5, NULL);
+    }
+    else
+    {
+        ESP_LOGE("Doser", "Failed to allocate memory for dispense task");
+    }
     ESP_LOGI("Doser", "Running program: VTBI=%.2f ml, Flow Rate=%.2f ml/h, Steps=%d, Speed=%.2f RPM", vtbi, flow_rate, steps_needed, speed_rpm);
 }
 
@@ -30,12 +51,12 @@ void doser_stop(Doser *doser)
     stepper_stop(&doser->motor);
 }
 
-void full_open(Doser *doser)
+void doser_full_open(Doser *doser)
 {
-    doser_dispense(doser, 1000.0f, 60.0f); // Dispense 1000 ml at 60 RPM
+    doser_run_program(doser, -1000.0f, 200.0f); // Move to full open position
 }
 
-void full_close(Doser *doser)
+void doser_full_close(Doser *doser)
 {
-    doser_dispense(doser, -1000.0f, 60.0f); // Stop dispensing
+    doser_run_program(doser, 1000.0f, 200.0f); // Move to full closed position
 }

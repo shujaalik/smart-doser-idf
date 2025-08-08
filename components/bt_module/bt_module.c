@@ -170,7 +170,6 @@ void host_task(void *param)
 
 void init_ble_module(void)
 {
-    nvs_flash_init(); // TODO: remove
     nimble_port_init();
     ble_svc_gap_device_name_set(DEVICE_NAME);
     ble_svc_gap_init();

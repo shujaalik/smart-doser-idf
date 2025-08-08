@@ -7,6 +7,7 @@
 #include "i2cdev.h"
 
 void time_manager_init(void);
+void set_time(struct tm *time);
 struct tm get_time(void);
 
 #endif

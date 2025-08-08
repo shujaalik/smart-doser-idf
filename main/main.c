@@ -52,15 +52,61 @@ void act(char *cmd_json, void (*callback)(const char *))
         float flow_rate = cJSON_GetObjectItem(program, "flow_rate")->valuedouble;
         doser_run_program(&doser, vtbi, flow_rate);
     }
+    else if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "FULL_OPEN") == 0)
+    {
+        callback("ACK");
+        doser_full_open(&doser);
+        ESP_LOGI("ACT", "Stepper motor moved to full open position");
+    }
+    else if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "FULL_CLOSED") == 0)
+    {
+        callback("ACK");
+        doser_full_close(&doser);
+        ESP_LOGI("ACT", "Stepper motor moved to full closed position");
+    }
+    if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "RTC_SET") == 0)
+    {
+        ESP_LOGI("ACT", "RTC_SET command received");
+        cJSON *data = cJSON_GetObjectItem(cmd, "data");
+        struct tm time = {
+            .tm_year = 100, // since 1900 (2016 - 1900)
+            .tm_mon = 0,    // 0-based
+            .tm_mday = 0,
+            .tm_hour = 0,
+            .tm_min = 0,
+            .tm_sec = 0};
+        cJSON *year = cJSON_GetObjectItemCaseSensitive(data, "year");
+        cJSON *month = cJSON_GetObjectItemCaseSensitive(data, "month");
+        cJSON *date = cJSON_GetObjectItemCaseSensitive(data, "date");
+        cJSON *hour = cJSON_GetObjectItemCaseSensitive(data, "hour");
+        cJSON *minute = cJSON_GetObjectItemCaseSensitive(data, "minute");
+        cJSON *second = cJSON_GetObjectItemCaseSensitive(data, "second");
+        if (cJSON_IsNumber(year) && (year->valueint != 0))
+            time.tm_year = year->valueint - 1900;
+        if (cJSON_IsNumber(month) && (month->valueint != 0))
+            time.tm_mon = month->valueint - 1;
+        if (cJSON_IsNumber(date) && (date->valueint != 0))
+            time.tm_mday = date->valueint;
+        if (cJSON_IsNumber(hour) && (hour->valueint != 0))
+            time.tm_hour = hour->valueint;
+        if (cJSON_IsNumber(minute) && (minute->valueint != 0))
+            time.tm_min = minute->valueint;
+        if (cJSON_IsNumber(second) && (second->valueint != 0))
+            time.tm_sec = second->valueint;
+        printf("Setting RTC to %d-%d-%d %d:%d:%d\n", time.tm_year, time.tm_mon, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
+        set_time(&time);
+        callback("RTC_SET_DONE");
+        ESP_LOGI("ACT", "RTC_SET DONE");
+    }
     else
         ESP_LOGW("ACT", "Unknown command: %s", cJSON_GetObjectItem(cmd, "action")->valuestring);
 }
 
 void initialize_all(void)
 {
+    time_manager_init();
     doser_init(&doser, DRIVER_STEPS_PER_REV, DRIVER_DEFAULT_SPEED, doser.calibration_factor);
     lcd_init();
-    time_manager_init();
     io_module_init();
     init_wifi_module();
 }
@@ -68,6 +114,7 @@ void initialize_all(void)
 void start_modules(void)
 {
     start_bt_module();
+    start_wifi_module();
     struct tm current_time = get_time();
     ESP_LOGI("START_MODULES", "Current time: %02d:%02d:%02d", current_time.tm_hour, current_time.tm_min, current_time.tm_sec);
 }
