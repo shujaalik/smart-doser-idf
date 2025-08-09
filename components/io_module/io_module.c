@@ -9,6 +9,9 @@ page_t page = MAIN_MENU;
 main_select_t selected_mode = MANUAL_MODE;
 manual_control_t manual_control_data = {0.0, 0.0};
 manual_control_cursor_t manual_control_cursor = CURSOR_FLOW_RATE;
+extern program_t programs[10];
+extern int program_count;
+extern Doser doser;
 
 static void IRAM_ATTR
 gpio_isr_handler(void *arg)
@@ -29,112 +32,127 @@ void gpio_task(void *arg)
             xQueueReset(gpio_evt_queue);
             if (state != gpio_get_level(io_num))
                 continue;
-            if (!state)
-                continue;
             switch (io_num)
             {
-            case BUTTON_01:
-                if (page == MAIN_MENU)
-                {
-                    selected_mode++;
-                    if (selected_mode > PURGE_MODE)
-                        selected_mode = MANUAL_MODE; // Loop back to manual mode
-                    main_menu_screen(selected_mode);
-                }
-                else if (page == MANUAL_CONTROL)
-                {
-                    if (manual_control_cursor == CURSOR_HOME)
-                        manual_control_cursor = CURSOR_FLOW_RATE; // Reset cursor to flow rate
-                    else
-                        manual_control_cursor++;
-                    manual_control_screen(manual_control_data, manual_control_cursor);
-                }
-                break;
-            case BUTTON_02:
-                if (page == MANUAL_CONTROL)
-                {
-                    switch (manual_control_cursor)
-                    {
-                    case CURSOR_HOME:
-                        page = MAIN_MENU;
-                        selected_mode = MANUAL_MODE; // Reset to manual mode
-                        main_menu_screen(selected_mode);
-                        break;
-                    case CURSOR_FLOW_RATE:
-                        if (manual_control_data.flow_rate > 0.0)
-                            manual_control_data.flow_rate -= 0.1; // Decrement flow rate
-                        manual_control_screen(manual_control_data, manual_control_cursor);
-                        break;
-                    case CURSOR_VOLUME:
-                        if (manual_control_data.volume > 0.0)
-                            manual_control_data.volume -= 0.1; // Decrement volume
-                        manual_control_screen(manual_control_data, manual_control_cursor);
-                        break;
-                    case CURSOR_START_STOP:
-                        // Start/Stop logic here
-                        break;
-                    default:
-                        break;
-                    }
-                }
-                break;
             case BUTTON_03:
-                if (page == MAIN_MENU)
-                {
-                    if (selected_mode == MANUAL_MODE)
-                    {
-                        page = MANUAL_CONTROL;
-                        manual_control_data.flow_rate = 0.0;      // Reset flow rate
-                        manual_control_data.volume = 0.0;         // Reset volume
-                        manual_control_cursor = CURSOR_FLOW_RATE; // Reset cursor position
-                        manual_control_screen(manual_control_data, manual_control_cursor);
-                    }
-                    else if (selected_mode == SCHEDULED_MODE)
-                    {
-                        page = SCHEDULED_DOSE;
-                        scheduled_dose_screen();
-                    }
-                    else if (selected_mode == PURGE_MODE)
-                    {
-                        page = PURGE_UNPURGE;
-                        // purge_unpurge_screen();
-                    }
-                }
-                else if (page == MANUAL_CONTROL)
-                {
-                    switch (manual_control_cursor)
-                    {
-                    case CURSOR_HOME:
-                        page = MAIN_MENU;
-                        selected_mode = MANUAL_MODE; // Reset to manual mode
-                        main_menu_screen(selected_mode);
-                        break;
-                    case CURSOR_FLOW_RATE:
-                        manual_control_data.flow_rate += 0.1; // Increment flow rate
-                        manual_control_screen(manual_control_data, manual_control_cursor);
-                        break;
-                    case CURSOR_VOLUME:
-                        manual_control_data.volume += .1; // Increment volume
-                        manual_control_screen(manual_control_data, manual_control_cursor);
-                        break;
-                    case CURSOR_START_STOP:
-                        // Start/Stop logic here
-                        break;
-                    default:
-                        break;
-                    }
-                }
+                if (state)
+                    doser_run_program(&doser, 100.0f, 500.0f, false);
                 else
-                {
-                    page = MAIN_MENU;
-                    selected_mode = MANUAL_MODE; // Reset to manual mode
-                    main_menu_screen(selected_mode);
-                }
+                    doser_stop(&doser);
                 break;
+            // case BUTTON_03:
+            //     if (state)
+            //         doser_run_program(&doser, -100.0f, 500.0f, false);
+            //     else
+            //         doser_stop(&doser);
+            //     break;
             default:
-                ESP_LOGI("GPIO_TASK", "Unknown GPIO interrupt: %ld", io_num);
                 break;
             }
+            // switch (io_num)
+            // {
+            // case BUTTON_01:
+            //     if (page == MAIN_MENU)
+            //     {
+            //         selected_mode++;
+            //         if (selected_mode > PURGE_MODE)
+            //             selected_mode = MANUAL_MODE; // Loop back to manual mode
+            //         main_menu_screen(selected_mode);
+            //     }
+            //     else if (page == MANUAL_CONTROL)
+            //     {
+            //         if (manual_control_cursor == CURSOR_HOME)
+            //             manual_control_cursor = CURSOR_FLOW_RATE; // Reset cursor to flow rate
+            //         else
+            //             manual_control_cursor++;
+            //         manual_control_screen(manual_control_data, manual_control_cursor);
+            //     }
+            //     break;
+            // case BUTTON_02:
+            //     if (page == MANUAL_CONTROL)
+            //     {
+            //         switch (manual_control_cursor)
+            //         {
+            //         case CURSOR_HOME:
+            //             page = MAIN_MENU;
+            //             selected_mode = MANUAL_MODE; // Reset to manual mode
+            //             main_menu_screen(selected_mode);
+            //             break;
+            //         case CURSOR_FLOW_RATE:
+            //             if (manual_control_data.flow_rate > 0.0)
+            //                 manual_control_data.flow_rate -= 0.1; // Decrement flow rate
+            //             manual_control_screen(manual_control_data, manual_control_cursor);
+            //             break;
+            //         case CURSOR_VOLUME:
+            //             if (manual_control_data.volume > 0.0)
+            //                 manual_control_data.volume -= 0.1; // Decrement volume
+            //             manual_control_screen(manual_control_data, manual_control_cursor);
+            //             break;
+            //         case CURSOR_START_STOP:
+            //             // Start/Stop logic here
+            //             break;
+            //         default:
+            //             break;
+            //         }
+            //     }
+            //     break;
+            // case BUTTON_03:
+            //     if (page == MAIN_MENU)
+            //     {
+            //         if (selected_mode == MANUAL_MODE)
+            //         {
+            //             page = MANUAL_CONTROL;
+            //             manual_control_data.flow_rate = 0.0;      // Reset flow rate
+            //             manual_control_data.volume = 0.0;         // Reset volume
+            //             manual_control_cursor = CURSOR_FLOW_RATE; // Reset cursor position
+            //             manual_control_screen(manual_control_data, manual_control_cursor);
+            //         }
+            //         else if (selected_mode == SCHEDULED_MODE)
+            //         {
+            //             page = SCHEDULED_DOSE;
+            //             scheduled_dose_screen();
+            //         }
+            //         else if (selected_mode == PURGE_MODE)
+            //         {
+            //             page = PURGE_UNPURGE;
+            //             // purge_unpurge_screen();
+            //         }
+            //     }
+            //     else if (page == MANUAL_CONTROL)
+            //     {
+            //         switch (manual_control_cursor)
+            //         {
+            //         case CURSOR_HOME:
+            //             page = MAIN_MENU;
+            //             selected_mode = MANUAL_MODE; // Reset to manual mode
+            //             main_menu_screen(selected_mode);
+            //             break;
+            //         case CURSOR_FLOW_RATE:
+            //             manual_control_data.flow_rate += 0.1; // Increment flow rate
+            //             manual_control_screen(manual_control_data, manual_control_cursor);
+            //             break;
+            //         case CURSOR_VOLUME:
+            //             manual_control_data.volume += .1; // Increment volume
+            //             manual_control_screen(manual_control_data, manual_control_cursor);
+            //             break;
+            //         case CURSOR_START_STOP:
+            //             // Start/Stop logic here
+            //             break;
+            //         default:
+            //             break;
+            //         }
+            //     }
+            //     else
+            //     {
+            //         page = MAIN_MENU;
+            //         selected_mode = MANUAL_MODE; // Reset to manual mode
+            //         main_menu_screen(selected_mode);
+            //     }
+            //     break;
+            // default:
+            //     ESP_LOGI("GPIO_TASK", "Unknown GPIO interrupt: %ld", io_num);
+            //     break;
+            // }
         }
     }
 }
@@ -154,5 +172,4 @@ void io_module_init(void)
         gpio_set_pull_mode(INPUT, GPIO_PULLDOWN_ENABLE);
         gpio_isr_handler_add(INPUT, gpio_isr_handler, (void *)INPUT);
     }
-    main_menu_screen(selected_mode); // Display the main menu on the LCD
 }

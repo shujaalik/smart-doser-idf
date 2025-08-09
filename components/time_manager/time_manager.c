@@ -25,6 +25,48 @@ void time_manager_init(void)
              current_time.tm_hour, current_time.tm_min, current_time.tm_sec);
 }
 
+void sync_time_from_sntp(void)
+{
+    ESP_LOGI("TIME_MANAGER", "Initializing SNTP...");
+
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org"); // You can change this if needed
+    sntp_init();
+
+    // Set timezone to Pakistan
+    setenv("TZ", "PKT-5", 1);
+    tzset();
+
+    // Wait for time to be set
+    time_t now = 0;
+    struct tm timeinfo = {0};
+    int retry = 0;
+    const int retry_count = 15; // ~15 seconds
+
+    while (timeinfo.tm_year < (2020 - 1900) && ++retry < retry_count)
+    {
+        ESP_LOGI("TIME_MANAGER", "Waiting for system time to be set... (%d/%d)", retry, retry_count);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        time(&now);
+        localtime_r(&now, &timeinfo);
+    }
+
+    if (timeinfo.tm_year >= (2020 - 1900))
+    {
+        ESP_LOGI("TIME_MANAGER", "System time set from SNTP: %04d-%02d-%02d %02d:%02d:%02d",
+                 timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday,
+                 timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+
+        // Update DS3231 with SNTP time
+        set_time(&timeinfo);
+        ESP_LOGI("TIME_MANAGER", "RTC updated from SNTP");
+    }
+    else
+    {
+        ESP_LOGE("TIME_MANAGER", "Failed to get time from SNTP");
+    }
+}
+
 struct tm get_time(void)
 {
     struct tm time;

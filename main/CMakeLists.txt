@@ -6,3 +6,4 @@ idf_component_register(
     PRIV_REQUIRES       # optional, list the private requirements
 )
 set(EXTRA_COMPONENTS, "components")
+spiffs_create_partition_image(storage ../db FLASH_IN_PROJECT)

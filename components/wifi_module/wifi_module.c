@@ -58,6 +58,7 @@ esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+        sync_time_from_sntp();
         esp_mqtt_client_subscribe(client, topics.sub, 1);
         esp_mqtt_client_subscribe(client, topics.broadcast_sub, 1);
         ESP_LOGI(TAG, "Subscribed to topic: %s", topics.sub);
@@ -199,7 +200,6 @@ void start_wifi_module(void)
 void init_wifi_module(void)
 {
     const char *TAG = "WIFI_MODULE";
-    nvs_flash_init();
     set_topic();
     esp_netif_init();
     esp_event_loop_create_default();

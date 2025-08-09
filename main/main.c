@@ -17,6 +17,8 @@ Doser doser = {
     },
     .calibration_factor = DRIVER_STEPS_PER_ML, // steps per ml
 };
+program_t programs[10];
+int program_count;
 
 void act(char *cmd_json, void (*callback)(const char *))
 {
@@ -30,6 +32,12 @@ void act(char *cmd_json, void (*callback)(const char *))
     if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "SCAN") == 0)
     {
         callback("SCAN_ACK");
+    }
+    else if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "GET_MAC") == 0)
+    {
+        char *mac = mac_address();
+        callback(mac);
+        free(mac);
     }
     else if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "SYNC") == 0)
     {
@@ -55,7 +63,21 @@ void act(char *cmd_json, void (*callback)(const char *))
         cJSON *program = cJSON_GetObjectItem(cmd, "data");
         float vtbi = cJSON_GetObjectItem(program, "vtbi")->valuedouble;
         float flow_rate = cJSON_GetObjectItem(program, "flow_rate")->valuedouble;
-        doser_run_program(&doser, vtbi, flow_rate);
+        doser_run_program(&doser, vtbi, flow_rate, true);
+    }
+    else if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "SAVE_PROGRAM") == 0)
+    {
+        callback("ACK");
+        cJSON *program = cJSON_GetObjectItem(cmd, "data");
+        float vtbi = cJSON_GetObjectItem(program, "vtbi")->valuedouble;
+        float flow_rate = cJSON_GetObjectItem(program, "flow_rate")->valuedouble;
+        program_t new_program = {
+            .vtbi = vtbi,
+            .flow_rate = flow_rate,
+            .name = cJSON_GetObjectItem(program, "name")->valuestring};
+        programs[program_count++] = new_program;
+        ESP_LOGI("ACT", "Program saved: %s", new_program.name);
+        save_programs();
     }
     else if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "FULL_OPEN") == 0)
     {
@@ -109,9 +131,11 @@ void act(char *cmd_json, void (*callback)(const char *))
 
 void initialize_all(void)
 {
+    init_spiffs();
     time_manager_init();
     doser_init(&doser, DRIVER_STEPS_PER_REV, DRIVER_DEFAULT_SPEED, doser.calibration_factor);
     lcd_init();
+    doser_full_open(&doser); // Move to full open position initially
     io_module_init();
     init_wifi_module();
 }

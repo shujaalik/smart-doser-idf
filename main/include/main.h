@@ -90,6 +90,13 @@ typedef struct
     uint32_t max_speed_delay;
 } StepperMotor;
 
+typedef struct
+{
+    float vtbi;      // Volume to be infused in ml
+    float flow_rate; // Flow rate in ml/h
+    char *name;      // Name of the program
+} program_t;
+
 void initialize_all(void);
 void act(char *cmd_json, void (*callback)(const char *));
 
@@ -98,6 +105,7 @@ void act(char *cmd_json, void (*callback)(const char *));
 #include "io_module.h"
 #include "bt_module.h"
 #include "wifi_module.h"
+#include "storage.h"
 #include "stepper.h"
 #include "doser.h"
 #include <cJSON.h>

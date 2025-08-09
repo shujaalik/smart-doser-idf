@@ -7,18 +7,17 @@ void doser_init(Doser *doser, int steps_per_rev, float max_rpm, float calibratio
 
     // Set additional parameters for the doser
     doser->calibration_factor = calibration_factor; // steps per ml
-    doser_full_open(doser);                         // Move to full open position initially
 }
 
 void doser_dispense(Doser *doser, float quantity_ml, float speed_rpm)
 {
     // Calculate required steps using calibration factor (steps/ml)
     int steps_needed = (int)(quantity_ml * doser->calibration_factor);
-    stepper_step(&doser->motor, steps_needed, speed_rpm);
+    stepper_step(&doser->motor, steps_needed, speed_rpm, true);
     ESP_LOGI("Doser", "Dispensed %.2f ml, which is %d steps at %.2f RPM", quantity_ml, steps_needed, speed_rpm);
 }
 
-void doser_run_program(Doser *doser, float vtbi, float flow_rate)
+void doser_run_program(Doser *doser, float vtbi, float flow_rate, int print)
 {
     int steps_needed = (int)(vtbi * doser->calibration_factor);
     float speed_rpm = flow_rate / doser->calibration_factor * 60;
@@ -26,7 +25,7 @@ void doser_run_program(Doser *doser, float vtbi, float flow_rate)
     void doser_dispense_task(void *param)
     {
         DoserDispenseTaskArgs *args = (DoserDispenseTaskArgs *)param;
-        stepper_step(&args->doser->motor, args->steps_needed, args->speed_rpm);
+        stepper_step(&args->doser->motor, args->steps_needed, args->speed_rpm, true);
         vPortFree(args);
         vTaskDelete(NULL);
     }
@@ -53,10 +52,10 @@ void doser_stop(Doser *doser)
 
 void doser_full_open(Doser *doser)
 {
-    doser_run_program(doser, -1000.0f, 200.0f); // Move to full open position
+    doser_dispense(doser, -1000.0f, 500.0f); // Move to full open position
 }
 
 void doser_full_close(Doser *doser)
 {
-    doser_run_program(doser, 1000.0f, 200.0f); // Move to full closed position
+    doser_dispense(doser, 1000.0f, 500.0f); // Move to full closed position
 }

@@ -103,8 +103,8 @@ void initializing_screen(void)
 void main_menu_screen(main_select_t selected_mode)
 {
     lcd_clear();
-    lcd_put_cur(0, 0);
-    lcd_send_string("Select Mode:");
+    // lcd_put_cur(0, 0);
+    // lcd_send_string("Select Mode:");
     lcd_put_cur(1, 0);
     lcd_send_string(selected_mode == 0 ? "> Manual Control" : "  Manual Control");
     lcd_put_cur(2, 0);
@@ -118,8 +118,8 @@ void manual_control_screen(manual_control_t manual_control_data, manual_control_
     float flow = manual_control_data.flow_rate;
     float volume = manual_control_data.volume;
     lcd_clear();
-    lcd_put_cur(0, 0);
-    lcd_send_string("Manual Control");
+    // lcd_put_cur(0, 0);
+    // lcd_send_string("Manual Control");
     lcd_put_cur(1, 0);
     lcd_send_string("FLW: ");
     lcd_put_cur(1, 5);
@@ -148,14 +148,32 @@ void manual_control_screen(manual_control_t manual_control_data, manual_control_
 void scheduled_dose_screen(void)
 {
     lcd_clear();
-    lcd_put_cur(0, 0);
-    lcd_send_string("VTBI: 5.0 ml");
+    // lcd_put_cur(0, 0);
+    // lcd_send_string("VTBI: 5.0 ml");
     lcd_put_cur(1, 0);
     lcd_send_string("FLOW: 100 ml/h");
     lcd_put_cur(2, 0);
     lcd_send_string("TIME: 00:00:00");
     lcd_put_cur(3, 0);
     lcd_send_string("PAU/RES:* HOME:*");
+}
+
+void lcd_task(void *arg)
+{
+    lcd_clear();
+    while (1)
+    {
+        lcd_put_cur(0, 0);
+        // print time
+        char time_str[16];
+        struct tm timeinfo = get_time();
+        int hours = timeinfo.tm_hour;
+        int minutes = timeinfo.tm_min;
+        int seconds = timeinfo.tm_sec;
+        snprintf(time_str, sizeof(time_str), "    %02d:%02d:%02d", hours, minutes, seconds);
+        lcd_send_string(time_str);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
 }
 
 void lcd_init(void)
@@ -191,6 +209,7 @@ void lcd_init(void)
     usleep(1000);
     lcd_clear(); // clear display
     initializing_screen();
+    // xTaskCreate(lcd_task, "lcd_task", 2048 * 2, NULL, 5, NULL);
 }
 
 void lcd_send_string(char *str)

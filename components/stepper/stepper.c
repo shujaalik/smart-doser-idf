@@ -69,19 +69,36 @@ void stepper_stop(StepperMotor *motor)
     ESP_LOGI(TAG, "Stepper motor stopped");
 }
 
-void stepper_step(StepperMotor *motor, int steps_to_move, float speed_rpm)
+void stepper_step(StepperMotor *motor, int steps_to_move, float speed_rpm, int print)
 {
     if (speed_rpm > 0)
         stepper_set_speed(motor, speed_rpm);
 
     motor->steps_left = steps_to_move < 0 ? -steps_to_move : steps_to_move;
     int direction = (steps_to_move > 0) ? 1 : 0;
+    float total_ml = (float)steps_to_move / DRIVER_STEPS_PER_ML;
+    lcd_clear();
 
     while (motor->steps_left > 0)
     {
         uint64_t now = esp_timer_get_time();
         if (now - motor->last_step_time >= motor->step_delay)
         {
+            if (print)
+            {
+                char *vtbi = malloc(50);
+                snprintf(vtbi, 50, "VTBI:%.1f/%.1fml", (float)(steps_to_move - motor->steps_left) / DRIVER_STEPS_PER_ML, total_ml);
+                lcd_put_cur(1, 0);
+                lcd_send_string(vtbi);
+                char *time_remaining = malloc(50);
+                time_t remaining_time = (float)motor->steps_left * motor->step_delay / 1000000.0f;
+                // 00:00:00
+                snprintf(time_remaining, 50, "ETF: %02d:%02d:%02d", (int)(remaining_time / 3600), (int)((remaining_time % 3600) / 60), (int)(remaining_time % 60));
+                lcd_put_cur(2, 0);
+                lcd_send_string(time_remaining);
+                free(vtbi);
+                free(time_remaining);
+            }
             if (!direction)
             {
                 if (gpio_get_level(motor->full_open_switch) == 1)
