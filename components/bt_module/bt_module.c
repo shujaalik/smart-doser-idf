@@ -9,6 +9,7 @@ bool bt_connected = false;
 
 TaskHandle_t ble_handle_task;
 uint16_t control_notif_handle;
+static uint16_t ble_conn_handle = BLE_HS_CONN_HANDLE_NONE;
 uint8_t ble_addr_type;
 
 void send_ble(uint16_t conn_handle, char *msg)
@@ -58,11 +59,11 @@ int device_read(uint16_t con_handle, uint16_t attr_handle, struct ble_gatt_acces
 {
     return 0;
 };
-static void send_ble_notification_handler(const char *msg)
+static void send_ble_notification_handler(char *msg)
 {
     if (bt_connected)
     {
-        send_ble_notification(control_notif_handle, msg);
+        send_ble_notification(ble_conn_handle, msg);
     }
     else
     {
@@ -71,24 +72,8 @@ static void send_ble_notification_handler(const char *msg)
 }
 int device_write(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
-    // int len = ctxt->om->om_len;
     char *msg = (char *)ctxt->om->om_data;
-    // cJSON *json = cJSON_ParseWithLength(msg, len);
-    // if (json == NULL)
-    // {
-    //     const char *error_ptr = cJSON_GetErrorPtr();
-    //     if (error_ptr != NULL)
-    //         printf("Error before: %s\n", error_ptr);
-    //     return 0;
-    // }
-    // char *action = cJSON_GetObjectItem(json, "action")->valuestring;
-    // if (strcmp(action, "SYNC") == 0)
-    // {
-    //     send_ble_notification(conn_handle, "ACK");
-    // }
     act(msg, send_ble_notification_handler);
-    // free
-    // cJSON_Delete(json);
     return 0;
 }
 
@@ -116,11 +101,13 @@ int ble_gap_event(struct ble_gap_event *event, void *arg)
         {
             ble_app_advertise();
         }
+        ble_conn_handle = event->connect.conn_handle;
         bt_connected = true;
         break;
     // Advertise again after completion of the event
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGI("GAP", "BLE GAP EVENT DISCONNECTED");
+        ble_conn_handle = BLE_HS_CONN_HANDLE_NONE;
         bt_connected = false;
         ble_app_advertise();
         break;

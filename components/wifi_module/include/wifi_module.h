@@ -15,6 +15,7 @@ typedef struct
 {
     char *pub;
     char *sub;
+    char *broadcast_sub;
 } topic_t;
 
 void set_topic(void);

@@ -27,14 +27,19 @@ void act(char *cmd_json, void (*callback)(const char *))
         return;
     }
     ESP_LOGI("ACT", "Received command: %s", cJSON_Print(cmd));
-    if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "SYNC") == 0)
+    if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "SCAN") == 0)
+    {
+        callback("SCAN_ACK");
+    }
+    else if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "SYNC") == 0)
     {
         callback("ACK");
     }
     else if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "INSERT_DOSE") == 0)
     {
         callback("ACK");
-        float quantity_ml = atof(cJSON_GetObjectItem(cmd, "data")->valuestring);
+        // data in float
+        float quantity_ml = cJSON_GetObjectItem(cmd, "data")->valuedouble;
         float speed_rpm = DRIVER_DEFAULT_SPEED;
         doser_dispense(&doser, quantity_ml, speed_rpm);
         callback("DISPENSED");
@@ -64,7 +69,7 @@ void act(char *cmd_json, void (*callback)(const char *))
         doser_full_close(&doser);
         ESP_LOGI("ACT", "Stepper motor moved to full closed position");
     }
-    if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "RTC_SET") == 0)
+    else if (strcmp(cJSON_GetObjectItem(cmd, "action")->valuestring, "RTC_SET") == 0)
     {
         ESP_LOGI("ACT", "RTC_SET command received");
         cJSON *data = cJSON_GetObjectItem(cmd, "data");
@@ -115,8 +120,6 @@ void start_modules(void)
 {
     start_bt_module();
     start_wifi_module();
-    struct tm current_time = get_time();
-    ESP_LOGI("START_MODULES", "Current time: %02d:%02d:%02d", current_time.tm_hour, current_time.tm_min, current_time.tm_sec);
 }
 
 void app_main(void)

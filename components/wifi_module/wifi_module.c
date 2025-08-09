@@ -31,13 +31,17 @@ void set_topic(void)
 {
     // sub to smart-doser-225/server_to_unit/MAC
     // pub to smart-doser-225/unit_to_server/MAC
+    // broadcast_sub to smart-doser-225/server_to_unit/broadcast
     char *mac_str = mac_address();
     topics.pub = malloc(50);
     topics.sub = malloc(50);
     sprintf(topics.pub, "smart-doser-225/unit_to_server/%s", mac_str);
     sprintf(topics.sub, "smart-doser-225/server_to_unit/%s", mac_str);
+    topics.broadcast_sub = malloc(50);
+    sprintf(topics.broadcast_sub, "smart-doser-225/server_to_unit/broadcast");
     printf("PUB: %s\n", topics.pub);
     printf("SUB: %s\n", topics.sub);
+    printf("BROADCAST_SUB: %s\n", topics.broadcast_sub);
 }
 
 void mqtt_action_performer(char *msg)
@@ -55,6 +59,9 @@ esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         esp_mqtt_client_subscribe(client, topics.sub, 1);
+        esp_mqtt_client_subscribe(client, topics.broadcast_sub, 1);
+        ESP_LOGI(TAG, "Subscribed to topic: %s", topics.sub);
+        ESP_LOGI(TAG, "Subscribed to topic: %s", topics.broadcast_sub);
         if (!mqtt_connected)
         {
             mqtt_connected = true;
