@@ -60,11 +60,11 @@ void doser_stop(Doser *doser)
 void doser_full_open(Doser *doser)
 {
     // Move in reverse direction at fast rate to reach open limit
-    doser_dispense(doser, -1000.0f, 500.0f, false);
+    doser_dispense(doser, -1000.0f, 500000.0f, false);
 }
 
 void doser_full_close(Doser *doser)
 {
     // Move forward at fast rate to reach close limit
-    doser_dispense(doser, 1000.0f, 500.0f, false);
+    doser_dispense(doser, 1000.0f, 500000.0f, false);
 }

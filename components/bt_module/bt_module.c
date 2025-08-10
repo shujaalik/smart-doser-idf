@@ -103,12 +103,14 @@ int ble_gap_event(struct ble_gap_event *event, void *arg)
         }
         ble_conn_handle = event->connect.conn_handle;
         bt_connected = true;
+        main_screen();
         break;
     // Advertise again after completion of the event
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGI("GAP", "BLE GAP EVENT DISCONNECTED");
         ble_conn_handle = BLE_HS_CONN_HANDLE_NONE;
         bt_connected = false;
+        main_screen();
         ble_app_advertise();
         break;
     case BLE_GAP_EVENT_ADV_COMPLETE:
