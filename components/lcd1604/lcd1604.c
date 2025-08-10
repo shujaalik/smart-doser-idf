@@ -3,6 +3,9 @@
 esp_err_t err;
 
 static const char *TAG = "LCD1604";
+extern bool bt_connected;
+extern bool wifi_connected;
+extern bool mqtt_connected;
 
 static esp_err_t i2c_master_init(void)
 {
@@ -98,6 +101,22 @@ void initializing_screen(void)
     lcd_send_string("Influsion Pump");
     lcd_put_cur(2, 0);
     lcd_send_string("Initializing...");
+}
+
+void main_screen(void)
+{
+    lcd_clear();
+    lcd_put_cur(0, 0);
+    lcd_send_string("Influsion Pump");
+    lcd_put_cur(1, 0);
+    // BT Connected
+    lcd_send_string(bt_connected ? "BT  : CONNECTED" : "BT  : DISCONNECT");
+    lcd_put_cur(2, 0);
+    // WiFi Connected
+    lcd_send_string(wifi_connected ? "WiFi: CONNECTED" : "WiFi: DISCONNECT");
+    lcd_put_cur(3, 0);
+    // MQTT Connected
+    lcd_send_string(mqtt_connected ? "MQTT: CONNECTED" : "MQTT: DISCONNECT");
 }
 
 void main_menu_screen(main_select_t selected_mode)

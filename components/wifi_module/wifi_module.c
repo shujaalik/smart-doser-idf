@@ -7,8 +7,8 @@ extern const uint8_t ca_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 esp_mqtt_client_handle_t mqtt_client;
 topic_t topics;
 
-bool wifi_connected = false;
-bool mqtt_connected = false;
+extern bool wifi_connected;
+extern bool mqtt_connected;
 
 void publish(char *msg)
 {
@@ -66,9 +66,15 @@ esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
         if (!mqtt_connected)
         {
             mqtt_connected = true;
+            main_screen();
         }
         break;
     case MQTT_EVENT_DISCONNECTED:
+        if (mqtt_connected)
+        {
+            mqtt_connected = false;
+            main_screen();
+        }
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
         break;
     case MQTT_EVENT_SUBSCRIBED:
@@ -129,12 +135,20 @@ void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_base, in
     }
     else if (event_id == WIFI_EVENT_STA_CONNECTED)
     {
-        wifi_connected = true;
+        if (!wifi_connected)
+        {
+            wifi_connected = true;
+            main_screen();
+        }
         ESP_LOGI(TAG, "WiFi CONNECTED\n");
     }
     else if (event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
-        wifi_connected = false;
+        if (wifi_connected)
+        {
+            wifi_connected = false;
+            main_screen();
+        }
         wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
         // wifi SSID
         ESP_LOGI(TAG, "WiFi lost connection because of %d\n", event->reason);

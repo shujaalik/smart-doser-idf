@@ -36,7 +36,7 @@ void gpio_task(void *arg)
             {
             case BUTTON_03:
                 if (state)
-                    doser_run_program(&doser, 100.0f, 500.0f, false);
+                    doser_run_program(&doser, 100.0f, 5000.0f, false);
                 else
                     doser_stop(&doser);
                 break;

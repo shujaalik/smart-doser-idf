@@ -9,12 +9,16 @@
 #include "esp_timer.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_rom_sys.h"
+
+#define PRINT_DELAY 1000
+#define BATCH_STEPS 3
 
 void stepper_release(StepperMotor *motor);
-void stepper_set_speed(StepperMotor *motor, float rpm);
+void stepper_set_flow_rate(StepperMotor *motor, float ml_per_hour);
 void stepper_step_motor(StepperMotor *motor, int step);
-void stepper_init(StepperMotor *motor, gpio_num_t in1, gpio_num_t in2, gpio_num_t in3, gpio_num_t in4, gpio_num_t full_open_switch, gpio_num_t full_closed_switch, int steps, float max_speed_rpm);
+void stepper_init(StepperMotor *motor, gpio_num_t in1, gpio_num_t in2, gpio_num_t in3, gpio_num_t in4, gpio_num_t full_open_switch, gpio_num_t full_closed_switch, int steps);
 void stepper_stop(StepperMotor *motor);
-void stepper_step(StepperMotor *motor, int steps_to_move, float speed_rpm, int print);
+void stepper_step_ml(StepperMotor *motor, float total_ml, float ml_per_hour, int print);
 
 #endif

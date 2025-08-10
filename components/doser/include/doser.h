@@ -6,6 +6,7 @@
 #include "stepper.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "lcd1604.h"
 
 typedef struct
 {
@@ -15,14 +16,15 @@ typedef struct
 typedef struct
 {
     Doser *doser;
-    int steps_needed;
-    float speed_rpm;
+    int vtbi_ml;
+    float flow_rate_ml_h;
+    int print;
 } DoserDispenseTaskArgs;
 
-void doser_init(Doser *doser, int steps_per_rev, float max_rpm, float calibration_factor);
-void doser_dispense(Doser *doser, float quantity_ml, float speed_rpm);
+void doser_init(Doser *doser, int steps_per_rev, float calibration_factor);
+void doser_dispense(Doser *doser, float quantity_ml, float flow_rate_ml_h, int print);
 void doser_stop(Doser *doser);
-void doser_run_program(Doser *doser, float vtbi, float flow_rate, int print);
+void doser_run_program(Doser *doser, float vtbi_ml, float flow_rate_ml_h, int print);
 void doser_full_open(Doser *doser);
 void doser_full_close(Doser *doser);
 

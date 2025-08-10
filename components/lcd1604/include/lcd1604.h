@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 void lcd_init(void); // initialize lcd
+void main_screen(void);
 
 void lcd_send_cmd(char cmd); // send command to the lcd
 

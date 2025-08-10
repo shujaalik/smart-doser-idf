@@ -107,7 +107,9 @@
     "stepper.h": "c",
     "stdbool.h": "c",
     "storage.h": "c",
-    "chrono": "c"
+    "chrono": "c",
+    "esp_rom_sys.h": "c",
+    "wifi_module.h": "c"
   },
   "idf.openOcdConfigs": [
     "interface/ftdi/esp32_devkitj_v1.cfg",

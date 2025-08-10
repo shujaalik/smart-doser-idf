@@ -5,7 +5,7 @@ struct msgWithLen_t
     char *msg;
     int len;
 } msg_from_server;
-bool bt_connected = false;
+extern bool bt_connected;
 
 TaskHandle_t ble_handle_task;
 uint16_t control_notif_handle;
